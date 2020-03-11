@@ -168,15 +168,17 @@ double Sin(double degrees) { return sin(degrees * M_PI_2); }
 ```
 
 ## 7b. finish calculating H and convert into hours
-	
+
 ```
-	if if rising time is desired:
+	if rising time is desired:
 	  H = 360 - acos(cosH)
 	if setting time is desired:
 	  H = acos(cosH)
 	
 	H = H / 15
 ```
+Choose if you want to calculate sunrise time or sunset.
+	
 
 ## 8. calculate local mean time of rising/setting
 
@@ -208,7 +210,7 @@ for (auto N = 0; N < 366l N++) {
 }
 ```
 
-## Using R
+## Creating a 3-d plot using R
 
 ```R
 install.packages("plotly")
@@ -223,8 +225,8 @@ plot_ly(z = ~as.matrix(d)) %>% add_surface()
 g++ -fopenmp sunrise.cpp -o sunrise
 ```
 
-We can't output the results in parallel, but we can compute them and
-save the values into an array:
+We can't output the results in parallel (they would get all mixed up),
+but we can compute them and save the values into an array:
 
 ```cpp
 int main() {
@@ -234,5 +236,9 @@ int main() {
     for (auto latitude = 0; latitude < 90; latitude++)
       results[day][latitude] = sunrise(day, latitude, 0);
 ```
+
+The `omp parallel for` means the for-loop is divided up by the
+available processors (you might have 4, 8 or even 16 of them on your
+PC; a high-end computer might have as many as 96).
 
 You can read more about OpenMP at, e.g. https://bisqwit.iki.fi/story/howto/openmp/.
