@@ -151,7 +151,7 @@ another roll.
 
 C++ provides a high-quality library of random number sources and
 distribution generators. It is worth studying, as most languages
-provide more simplistic support.
+provide more simplistic support (http://xkcd.com/221).
 
 A random number source can be either a "pseudo-random number
 generator" or a true random source. Pseudo-random sources are entirely
