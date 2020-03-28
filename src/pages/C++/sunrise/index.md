@@ -264,6 +264,10 @@ int main() {
       results[day][latitude] = sunrise(day, latitude, 0);
 ```
 
+Note we have used 0 as the first day and latitude, as all arrays in
+C++ use index 0 as the first cell.
+
+
 The `omp parallel for` means the for-loop is divided up by the
 available processors (you might have 4, 8 or even 16 of them on your
 PC; a high-end computer might have as many as 96).
@@ -271,6 +275,10 @@ PC; a high-end computer might have as many as 96).
 You can read more about OpenMP at, e.g. https://bisqwit.iki.fi/story/howto/openmp/.
 
 # Working solution
+
+<details>
+<summary>sunset.cpp</summary>
+<p>
 
 ```cpp
 #include <iostream>
@@ -327,3 +335,5 @@ int main() {
   return 0;
 }
 ```
+</p>
+</details>

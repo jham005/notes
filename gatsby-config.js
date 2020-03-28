@@ -15,7 +15,7 @@ module.exports = {
         background_color: '#663399',
         theme_color: '#663399',
         display: 'minimal-ui',
-      },
+      }
     },
     {
       resolve: `gatsby-transformer-remark`,
@@ -27,8 +27,8 @@ module.exports = {
             resolve: `gatsby-remark-images`,
             options: {
               maxWidth: 650,
-            },
-          },
+            }
+          }
         ]
       }
     },
@@ -39,5 +39,5 @@ module.exports = {
         name: 'pages'
       }
     }
-  ],
+  ]
 }
