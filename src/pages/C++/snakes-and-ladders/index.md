@@ -204,21 +204,21 @@ numbers between 1 and 6 have an equal chance of appearing. This is the
 ```cpp
 #include <random>
 
-std::default_random_engine generator(0);
-std::uniform_int_distribution<int> distribution(1, 6);
+std::default_random_engine generator { 0 };
+std::uniform_int_distribution<int> distribution { 1, 6 };
 int roll() {
   return distribution(generator);
 }
 ```
 
-The `0` passed to `generator` is a "seed". This determines the initial
-state of the generator. For a given seed, a pseudo-random number
-generator will always return the same sequence. If you want a
+The `0` used to initialise `generator` is a "seed". This determines
+the initial state of the generator. For a given seed, a pseudo-random
+number generator will always return the same sequence. If you want a
 different sequence every time you run the program, you can use a true
 random number source for the seed:
 
 ```cpp
-std::default_random_engine generator(std::random_device{}());
+std::default_random_engine generator { std::random_device{}() };
 ```
 
 Using a random source as the generator would also be possible, but (a)
@@ -226,8 +226,8 @@ it's slower, and (b) you won't be able to reproduce your results exactly.
 Here's an example:
 ```cpp
 auto seed = std::random_device{}();
-std::default_random_engine generator(seed);
-std::uniform_int_distribution<int> roll(1, 6);
+std::default_random_engine generator { seed };
+std::uniform_int_distribution<int> roll { 1, 6 };
 
 int main() {
   std::cout << "To reproduce this run, set seed to " << seed << "\n";
@@ -247,7 +247,7 @@ trials.
 #include <iostream>
 #include <random>
 
-std::default_random_engine rng(std::random_device{}());
+std::default_random_engine rng { std::random_device{}() };
 std::uniform_int_distribution<int> dice { 1, 6 };
 int roll() { return dice(rng); }
 
@@ -468,7 +468,7 @@ elsewhere. We can use a class to hide them:
 
 ```cpp
 class Dice {
-  std::default_random_engine rng(std::random_device{}());
+  std::default_random_engine rng { std::random_device{}() };
   std::uniform_int_distribution<int> dice { 1, 6 };
 public:
   int roll() { return dice(rng); }
@@ -500,7 +500,7 @@ function with no name! (If we need to refer to it, it's called "apply").
 
 ```cpp
 class Dice {
-  std::default_random_engine rng(std::random_device{}());
+  std::default_random_engine rng { std::random_device{}() };
   std::uniform_int_distribution<int> dice { 1, 6 };
 public:
   int operator()() { return dice(rng); }
@@ -607,6 +607,102 @@ int main() {
 }
 ```
 
+Here is a working solution so far. Compile this using `g++ -fopenmp
+snakes.cpp -o snakes`. If you are using MacOS you may need to use `g++
+-Xpreprocessor -fopenmp -lomp snakes.cpp -o snakes`.
+
+<details>
+<summary>snakes.cpp</summary>
+<p>
+
+```cpp
+#include <iostream>
+#include <random>
+
+class Dice {
+  std::default_random_engine rng { std::random_device{}() };
+  std::uniform_int_distribution<int> dice { 1, 6 };
+public: 
+  int operator()() { return dice(rng); }
+};
+
+class Board {
+  int board[106];
+public:
+  Board() {
+    // From https://www.shutterstock.com/image-vector/snakes-ladders-board-game-start-finish-163384724
+    for (int i = 0; i < 106; i++)
+      board[i] = i;
+    board[1] = 38;
+    board[4] = 14;
+    board[9] = 31;
+    board[17] = 7;
+    board[21] = 42;
+    board[28] = 84;
+    board[51] = 67;
+    board[54] = 34;
+    board[62] = 19;
+    board[64] = 60;
+    board[67] = 51;
+    board[72] = 91;
+    board[80] = 99;
+    board[87] = 36;
+    board[93] = 73;
+    board[95] = 75;
+    board[98] = 79;
+    board[101] = board[99];
+    board[102] = board[98];
+    board[103] = board[97];
+    board[104] = board[96];
+    board[105] = board[95];
+  }
+
+  int operator[](int i) {
+    if (i >= 0 && i < 106)
+      return board[i];
+    return 0;
+  }
+};
+
+Board board;
+
+class Game {
+  Dice roll;
+
+  bool firstPlayerWins() {
+    int red = 0;
+    int blue = 0;
+    while (true) {
+      red = board[red + roll()];
+      if (red == 100) return true;
+      blue = board[blue + roll()];
+      if (blue == 100) return false;
+    }
+  }
+
+public:
+  int countWins(int nTrials) {   
+    int wins = 0;
+    for (int trials = 0; trials < nTrials; trials++)
+      if (firstPlayerWins())
+        wins++;
+    return wins;
+  }
+};
+
+int main() {
+#pragma omp parallel
+  {
+    Game game;
+    int wins = game.countWins(10000);
+#pragma omp critical
+    std::cout << "In 10,000 trials, the first player won " << wins << "\n";
+  }
+}
+```
+</p>
+</details>
+
 <div id="lets-not-repeat-ourselves" />
 
 ## Let's not repeat ourselves
@@ -644,14 +740,14 @@ Our first attempt at writing a move function is wrong, but will
 motivate introducing the "references" feature:
 
 ```cpp
-  bool move(int player, int otherPlayer) {
+  bool move(int player, int opponent) {
     int r;
     do {
       r = roll();
       player = board[player + r];
       if (player == 100) return true;
-      if (player == otherPlayer)
-        otherPlayer = 0;
+      if (player == opponent)
+        opponent = 0;
     } while (r == 6);
 
     return false;
@@ -677,13 +773,13 @@ The function returns `true` iff the `player` has won. Our
 The flaw with this code is that no player ever moves! The variables
 `red` and `blue` never change. When the `move` function is called, a
 _copy_ of the value is passed to the function. Changes `move` makes to
-`player` or `otherPlayer` are not reflected back to `red` or `blue`.
+`player` or `opponent` are not reflected back to `red` or `blue`.
 
-To fix this problem, we need to make `player` and `otherPlayer`
+To fix this problem, we need to make `player` and `opponent`
 _references_:
 
 ```cpp
-  bool move(int& player, int& otherPlayer) {
+  bool move(int& player, int& opponent) {
 ```
 
 The `&` can be appended to any type to make it into a reference.
@@ -710,11 +806,9 @@ for `red + 1` - its simply a value.
 #include <random>
 
 class Dice {
-  std::default_random_engine rng;
+  std::default_random_engine rng { std::random_device{}() };
   std::uniform_int_distribution<int> dice { 1, 6 };
 public:
-  Dice() : rng(std::random_device{}()) { }
-
   Dice(unsigned int seed) : rng(seed) { }
   
   int operator()() { return dice(rng); }
@@ -761,14 +855,14 @@ const Board board;
 class Game {
   Dice roll;
 
-  bool move(int& player, int& otherPlayer) {
+  bool move(int& player, int& opponent) {
     int r;
     do {
       r = roll();
       player = board[player + r];
       if (player == 100) return true;
-      if (player == otherPlayer)
-        otherPlayer = 0;
+      if (player == opponent)
+        opponent = 0;
     } while (r == 6);
 
     return false;
