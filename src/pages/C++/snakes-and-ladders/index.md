@@ -10,20 +10,16 @@ children's game of Snakes and Ladders.
 [comment]: # (../../../../toc.sh)
 
 ## Contents
+
 - [Find yourself a board](#find-yourself-a-board)
-- [Modelling the board](#modelling-the-board)
 - [Making a move](#making-a-move)
-- [House rule #1: knock off](#house-rule--knock-off)
-- [House rule #2: sixes](#house-rule--sixes)
 - [Rolling a dice](#rolling-a-dice)
 - [Does the first player have an advantage?](#does-the-first-player-have-an-advantage)
 - [That forgettable `init` function](#that-forgettable-init-function)
-- [Tidying up the notation](#tidying-up-the-notation)
 - [A `Dice` class](#a-dice-class)
 - [Running simulations in parallel](#running-simulations-in-parallel)
 - [Let's not repeat ourselves](#lets-not-repeat-ourselves)
-- [Working solution](#working-solution)
-
+- [Collecting more game statistics](#collecting-more-game-statistics)
 
 <div id="find-yourself-a-board" />
 
@@ -32,9 +28,7 @@ children's game of Snakes and Ladders.
 Run a Google search to find a suitable board;
 e.g. [this one](https://www.shutterstock.com/image-vector/snakes-ladders-board-game-start-finish-163384724).
 
-<div id="modelling-the-board" />
-
-## Modelling the board
+### Modelling the board
 
 First, lets consider an obvious but unhelpful model: the board as a
 10x10 grid. The board certainly looks like a 10x10 grid, but looks can
@@ -46,12 +40,12 @@ be deceptive! Here are three reasons why this is not a good model:
    board, and moves that run past 100 are bounced back (as if there
    are hidden snakes).
 3. A better model exists!
-   
+
 The better model is: a single array of 106 cells. Why 106?
 
-* Cell 0 is the start, positioned off the main board
-* Cells 1 to 100 are the main board
-* Cells 101 to 105 are positions past the end cell (100). These are
+- Cell 0 is the start, positioned off the main board
+- Cells 1 to 100 are the main board
+- Cells 101 to 105 are positions past the end cell (100). These are
   not displayed in the game, but can still be landed on by rolling a
   total greater than 100 (e.g. from cell 99 a player can roll a 6 and
   land on cell 105).
@@ -66,7 +60,7 @@ int board[106];
 
 void init() {
   for (auto i = 0; i < 106; i++)
-	board[i] = i
+  board[i] = i
   board[1] = 38;
   board[4] = 14;
   board[9] = 31;
@@ -82,6 +76,7 @@ you end up on cell 98, etc. (if that cell contains a snake, you would
 then slide down the snake).
 
 We can implement this rule by making the 5 cells past 100 act as snakes:
+
 ```cpp
   board[101] = board[99];
   board[102] = board[98];
@@ -96,9 +91,11 @@ snakes that might appear on those positions into account.
 <div id="making-a-move" />
 
 ## Making a move
+
 To make a move, a player rolls a fair 6-sided dice, adds the value to
 their current position, and then uses the `board` array to determine
 their new position:
+
 ```cpp
 player = board[player + roll()];
 ```
@@ -116,23 +113,21 @@ void play() {
   int blue = 0;
   while (true) {
     red = board[red + roll()];
-	if (red == 100) {
-	  std::cout << "Red won!" << std::endl;
-	  return;
+    if (red == 100) {
+      std::cout << "Red won!" << std::endl;
+    return;
     }
 
-	blue = board[blue + roll()];
-	if (blue == 100) {
-	  std::cout << "Blue won!" << std::endl;
-	  return;
+    blue = board[blue + roll()];
+    if (blue == 100) {
+      std::cout << "Blue won!" << std::endl;
+      return;
     }
   }
 }
 ```
 
-<div id="house-rule-1-knock-off" />
-
-## House rule #1: knock off
+### House rule #1: knock off
 
 Implement the house rule that if a player lands on the same cell as an
 opponent, the opponent is sent back to the start (cell 0).
@@ -151,9 +146,7 @@ opponent, the opponent is sent back to the start (cell 0).
 </p>
 </details>
 
-<div id="house-rule-2-sixes" />
-
-## House rule #2: sixes
+### House rule #2: sixes
 
 Implement the house rule that if a player rolls a 6 then they get
 another roll.
@@ -167,8 +160,8 @@ another roll.
    int r;
    do {
      r = roll();
-	 red = board[red + r];
-	 if (red == 100) ...
+     red = board[red + r];
+     if (red == 100) ...
    } while (r == 6);
 ```
 
@@ -182,7 +175,7 @@ another roll.
 C++ provides a high-quality library of random number sources and
 distribution generators. It is worth studying, as most languages
 provide more simplistic support (although not as poor as
-http://xkcd.com/221).
+<http://xkcd.com/221>).
 
 A random number source can be either a "pseudo-random number
 generator" or a true random source. Pseudo-random sources are entirely
@@ -224,6 +217,7 @@ std::default_random_engine generator { std::random_device{}() };
 Using a random source as the generator would also be possible, but (a)
 it's slower, and (b) you won't be able to reproduce your results exactly.
 Here's an example:
+
 ```cpp
 auto seed = std::random_device{}();
 std::default_random_engine generator { seed };
@@ -320,7 +314,6 @@ the confidence interval for the actual probability of winning is $5078
 / 10000 \pm 1.9599 / 2\sqrt 10000 \ge 0.5000005$, so there is a faint
 advantage to the first player.
 
-
 <div id="that-forgettable-init-function" />
 
 ## That forgettable `init` function
@@ -408,7 +401,7 @@ this:
 2. Arrays are notorious in C++ by not having any checks made when they
    are indexed. So it is perfectly possible to refer to an element
    outside the array bounds, with undefined results.
-   
+
 We can protect against both of these problems by exposing a function
 to return a single board item, rather than the entire board:
 
@@ -418,17 +411,15 @@ class Board {
 public:
   int get(int i) {
     if (i >= 0 && i < 106)
-	  return board[i];
-	return 0;
+      return board[i];
+    return 0;
   }
 ```
 
 Now our code can call, e.g. `shutterStockBoard.get(red + roll())` to
 find the board item at position `red + roll()`.
 
-<div id="tidying-up-the-notation" />
-
-## Tidying up the notation
+### Tidying up the notation
 
 When `board` was just an array, we looked up an item using the square
 bracket notation - e.g. `board[i]`. Now, with the `Board` class we
@@ -444,8 +435,8 @@ can define:
 public:
   int operator[](int i) {
     if (i >= 0 && i < 106)
-	  return board[i];
-	return 0;
+      return board[i];
+    return 0;
   }
 ```
 
@@ -681,7 +672,7 @@ class Game {
   }
 
 public:
-  int countWins(int nTrials) {   
+  int countWins(int nTrials) {
     int wins = 0;
     for (int trials = 0; trials < nTrials; trials++)
       if (firstPlayerWins())
@@ -793,9 +784,7 @@ Note that a reference argument must have an address. It is not
 possible to call, say, `move(red + 1, blue)` as there is no address
 for `red + 1` - its simply a value.
 
-<div id="working-solution" />
-
-## Working solution
+### Working solution
 
 <details>
 <summary>snakes.cpp</summary>
@@ -880,7 +869,7 @@ class Game {
   }
 
 public:
-  int countWins(int nTrials) {   
+  int countWins(int nTrials) {
     int wins = 0;
     for (int trials = 0; trials < nTrials; trials++)
       if (firstPlayerWins())
@@ -900,5 +889,469 @@ int main() {
   }
 }
 ```
+
 </p>
 </details>
+
+### References summary
+
+1. The `&` after a type means the address of the value is passed to
+   the function. Without an `&` the value is copied.
+2. An address either 32 or 64 bits (depending on the computer you are
+   using). Every address is the same size, regardless of the type of
+   thing it is addressing.
+3. Passing a reference means the code can change the contents of a
+   variable declared by the caller. This is one way of passing
+   information back from a function (the other way is to use the
+   function return value).
+4. References also get used when copying is expensive. In this case,
+   we declare the reference `const`, to make it clear that the value
+   is not changed by the function. This is a common pattern in C++
+   code.
+
+<div id="collecting-more-game-statistics" />
+
+## Collecting more game statistics
+
+We currently collect just one game statistic - the number of times the
+player who moves first wins. Two more statistics:
+
+1. A heatmap of the board, showing which squares are used most.
+2. The number of rolls games take. This will be a frequency
+   distribution (i.e. the number of games that are completed in a
+   given number of rolls).
+
+Collecting these statistics will motivate using some of the C++
+"collections" classes.
+
+### The heatmap
+
+For the heatmap we need a count for every square on the board. The
+counts will start out all zero, and every time a player is moved we
+increment the count for that square. The data structure for this is an
+array:
+
+```cpp
+int heatmap[106];
+```
+
+While this looks identical to the definition of the `board`, it has a
+very different meaning. The contents of the `board` array are all
+numbers between 0 and 105. In the heat map, the contents are counts of
+how many times a player has landed on that square.
+
+### Duration frequency
+
+Storing the duration frequency using an array would be awkward for
+several reasons. First, we have no prior knowledge of the maximum game
+duration. Our choices would be to either determine a reliable upper
+bound, or to not record games that take longer than a pre-determined
+maximum. Further, the duration distribution is "sparse", in the sense
+that there cannot be any games shorter than 6 or 7 rolls. There are
+also likely to be gaps at the upper end of the distibution, when a
+rare game goes on for much longer than any other. An array is a dense
+structure - every element in the index range is stored.
+
+C++ provides several library classes that are much better suited to
+storing sparce mappings. The `std::map` class is ideal for our
+purposes:
+
+```cpp
+#include <map>
+
+std::map<int, int> distribution;
+```
+
+The `<int, int>` specifies the types of the key and the value. Maps
+can use any ordered type for the key (unlike arrays, which can only
+use integers). For example, maps of `string`s are common. The value
+can be any type (just like arrays). Here, the value is the count of
+the number of games of the given duration (the key).
+
+Internally, maps store a collection of (key, value) pairs. However,
+they are designed in a way that makes looking up a value for a given
+key fast.
+
+### A `Statistic` class
+
+As usual, we will want to put our statistics into a class. When we
+are running our simulation in parallel, we will need each thread
+collect its own statistics. We can merge the separate statistics
+as each thread competes.
+
+```cpp
+class Statistics {
+  std::array<int, 106> heatmap { 0 };
+  std::map<int, int> duration;
+  int firstPlayerWins = 0;
+```
+
+I have changed the heatmap from using a built-in C++ array to the library `std::array` class. The `std::array` class has several advantages over the built-in arrays and really no disadvantages, so we will use it exclusively from now on. In particular, a `std::array` knows its size, how to make a copy of itself, and can do index checking if we want. Otherwise, it behaves exactly like a built-in array. To enable it, put the line `#include <array>` at the start of the file.
+
+We now need some function to update the statistics. For when a player lands on a square, we have either:
+
+```cpp
+void landing(int position) {
+  heatmap[position]++;
+}
+```
+
+or
+
+```cpp
+void landing(int position) {
+  heatmap.at(position)++;
+}
+```
+
+The latter will check that position is between 0 and 105, and throw a standard exception if it is not. This will protect our program in the event that a bad `position` is passed in.
+
+At the end of the game we know how many rolls were made and whether the first player won:
+
+```cpp
+void firstPlayerWon() {
+  firstPlayerWins++;
+}
+
+void gameMoves(int numberOfMoves) {
+  duration[numberOfMoves]++;
+}
+```
+
+Two more functions are needed. The first will be used when each thread finishes, and needs to merge its own statistics into the grand total. In C++, the conventional name for a "merge" operation is `+=`. We "merge" one number into another using `total += n`, and so it will look natural to merging one set of `Statistics` into another by writing `grandTotal += stats`.
+
+```cpp
+void operator+=(const Statistics& other) {
+  firstPlayerWins += other.firstPlayerWins;
+  for (int i = 0; i < heatmap.size(); i++)
+    heatmap[i] += other.heatmap[i];
+  for (const auto& kv: other.duration)
+    duration[kv.first] += kv.second;
+}
+```
+
+Finally, we need some means of printing the results. For now, we can use a `print` function. We will re-design this to something more standard shortly:
+
+```cpp
+void print() {
+  std::cout << "First player won " << firstPlayerWins << "\n";
+  std::cout << "Durations: ";
+  for (const auto& kv: duration)
+    std::cout << kv.first << ":" << kv.second << ", ";
+  std::cout << "\nHeatmap: ";
+  for (auto h: heatmap)
+    std::cout << h << ", ";
+  std::cout << "\n";
+}
+```
+
+The `for` loops use the modern C++ syntax for iterating over all elements in a collection. For `duration`, each element is a pair with two fields - one called `first` and one `second`. In our case, `first` is the game length and `second` is the number of games that took that many rolls. The purpose of the `auto` keyword is apparent here. Without it, we would need to write `for (const std::pair<const int, int>& kv: duration)`.
+
+### Updating `Game`
+
+We now need to "instrument" the `Game` class to collect the appropriate `Statistics`. This will involve changes to the `move` function (to record a landing event) and the `firstPlayerWins` function (to record a `gameEnd`). Our `Game` class becomes:
+
+```cpp
+class Game {
+  Dice dice;
+  Statistics stats;
+
+  bool move(int& player, int& otherPlayer, int& rollCount) {
+    int r;
+    do {
+      r = roll();
+      rollCount++;
+      player = board[player + r];
+      stats.landing(player);
+      if (player == 100) return true;
+      if (player == otherPlayer) // House rule #1: landing on another player bumps them off
+        otherPlayer = 0;
+    } while (r == 6); // House rule #2: rolling 6 gives you another turn
+    return false;
+  }
+
+  bool firstPlayerWins() {
+    int red = 0;
+    int blue = 0;
+    int rollCount = 0;
+    while (true) {
+      if (move(red, blue, rollCount)) {
+        stats.firstPlayerWon();
+        stats.gameMoves(rollCount);
+        return true;
+      }
+
+      if (move(blue, red, rollCount)) {
+        stats.gameMoves(rollCount);
+        return false;
+      }
+    }
+  }
+
+public:
+  int countWins(int nTrials) {
+    int wins = 0;
+    for (int trials = 0; trials < nTrials; trials++)
+      if (firstPlayerWins())
+        wins++;
+    return wins;
+  }
+};
+```
+
+There is a little bit of tidying up left to do. Our original `countWins` function is duplicating some of the statistics. Now, it just need to play `nTrials` games. Similarly, `firstPlayerWins` can be renamed to `playOneGame`, and it doesn't need to return anything.
+
+```cpp
+  void playOneGame() {
+    int red = 0;
+    int blue = 0;
+    int rollCount = 0;
+    while (true) {
+      if (move(red, blue, rollCount)) {
+        stats.firstPlayerWon();
+        break;
+      }
+
+      if (move(blue, red, rollCount))
+        break;
+    }
+
+    stats.gameMoves(rollCount);
+  }
+
+public:
+  operator const Statistics&() const { return stats; }
+
+  void runTrials(int nTrials) {
+    for (int trials = 0; trials < nTrials; trials++)
+      playOneGame();
+  }
+```
+
+### Running the trials in parallel
+
+Our `main` function can coordinate the available processor cores in running independent trials, where each parallel thread collects statistics using its own `Game` and then (serially) merges its results with into a grand total.
+
+```cpp
+int main() {
+  Statistics grandTotals;
+#pragma omp parallel
+  {
+    Game game;
+    game.runTrials(10000);
+#pragma omp critical
+    grandTotals += game;
+  }
+
+  std::cout << grandTotals << "\n";
+  return 0;
+}
+```
+
+This code glosses over two details:
+
+1. How the statistics for a `Game` are returned (the `stats` field is nowhere mentioned)
+2. What happened to the `print` method? We are writing out `grandTotal` directly.
+
+The first trick is achieved by defining an "implicit conversion". A "conversion" is a function that C++ will insert for us in order to obtain a value of the required type. Various standard implicit conversions are provided automatically to convert, say, `int` values to `double`s. But its possible to define conversions of our own. The conversion we want here is to turn a `Game` into a `Statistics` value, so it can be used by the `+=` "merge" function. We could write an ad-hoc conversion, such as
+
+```cpp
+Statistics getStats() { return stats; }
+```
+
+This has several problems. First, it will return a copy of the `stats`, which is a costly operation. Second, the name `getStats` is rather awkward. Defining an implicit conversion means we don't need to name the function at all (as C++ will call the function for us). We avoid the copy by returning a `const Statistics&`. The function doesn't change the `Game` class, so it needs to be declared `const`:
+
+```cpp
+operator const Statistics&() const { return stats; }
+```
+
+If the "magic" of a `Game` turning into `Statistics` disturbs you, you can declare the conversion as `explicit`. The calling code will then need to use a `static_cast` to perform the conversion.
+
+```cpp
+  // In class Game:
+  explicit operator const Statistics&() const { return stats; }
+
+  // In main:
+  grandTotals += static_cast<Statistics>(game);
+```
+
+The choice of implicit or explicit conversion is up to you. The `static_cast` is somewhat cumbersome, but highlights that a conversion is being performed. Writing an ad-hoc `getStats` function is discouraged, and would obscure the fact that a simple conversion is being performed.
+
+The `print` method has been replaced by the standard `<<` function:
+
+```cpp
+std::ostream& operator<<(std::ostream& out, const Statistics& stats) {
+  out << "First player won " << stats.firstPlayerWins << "\n";
+  out << "Durations: ";
+  for (const auto& kv: stats.duration)
+    out << kv.first << ":" << kv.second << ", ";
+  out << "\nHeatmap: ";
+  for (auto h: stats.heatmap)
+    out << h << ", ";
+  out << "\n";
+  return out;
+}
+```
+
+For technical reasons, this function can't be written in the `Statistics` class. Instead, the `Statistics` to print is passed as the _second_ argument to the `<<` function. The first argument is the output stream. We used `std::cout` in the original `print` function. This version will write to whichever output stream it is called on, making it much more versatile.
+
+As it stands, this `<<` function won't compile as it refers to private fields of `stats`. Usually, we wish to restrict access to the internals of a class, but this is a special case. To circumvent the access restriction for just this function, we declare it a `friend` of `Statistics`:
+
+```cpp
+  friend std::ostream& operator<<(std::ostream&, const Statistics&);
+```
+
+Here is the complete code:
+
+```cpp
+#include <array>
+#include <iostream>
+#include <map>
+#include <random>
+#include <vector>
+
+class Board {
+  std::array<int, 106> board;
+public:
+  Board() {
+    // From https://www.shutterstock.com/image-vector/snakes-ladders-board-game-start-finish-163384724
+    int p = 0;
+    for (auto& i: board)
+      i = p++;
+    board[1] = 38;
+    board[4] = 14;
+    board[9] = 31;
+    board[17] = 7;
+    board[21] = 42;
+    board[28] = 84;
+    board[51] = 67;
+    board[54] = 34;
+    board[62] = 19;
+    board[64] = 60;
+    board[67] = 51;
+    board[72] = 91;
+    board[80] = 99;
+    board[87] = 36;
+    board[93] = 73;
+    board[95] = 75;
+    board[98] = 79;
+    board[101] = board[99];
+    board[102] = board[98];
+    board[103] = board[97];
+    board[104] = board[96];
+    board[105] = board[95];
+  }
+
+  int operator[](int i) const {
+    return board.at(i);
+  }
+};
+
+const Board board;
+
+class Dice {
+  std::default_random_engine rng { std::random_device{}() };
+  std::uniform_int_distribution<int> dice { 1, 6 };
+public:
+  int operator()() { return dice(rng); }
+};
+
+class Statistics {
+  std::array<int, 106> heatmap { 0 };
+  std::map<int, int> duration;
+  int firstPlayerWins = 0;
+public:
+  void landing(int position) {
+    heatmap.at(position)++;
+  }
+
+  void firstPlayerWon() {
+    firstPlayerWins++;
+  }
+
+  void gameMoves(int numberOfMoves) {
+    duration[numberOfMoves]++;
+  }
+
+  Statistics& operator+=(const Statistics& other) {
+    for (int i = 0; i < heatmap.size(); i++)
+      heatmap[i] += other.heatmap[i];
+    firstPlayerWins += other.firstPlayerWins;
+    for (const auto& kv: other.duration)
+      duration[kv.first] += kv.second;
+    return *this;
+   }
+
+  friend std::ostream& operator<<(std::ostream&, const Statistics&);
+};
+
+std::ostream& operator<<(std::ostream& out, const Statistics& stats) {
+  out << "First player won " << stats.firstPlayerWins << "\n";
+  out << "Durations: ";
+  for (const auto& kv: stats.duration)
+    out << kv.first << ":" << kv.second << ", ";
+  out << "\nHeatmap: ";
+  for (auto h: stats.heatmap)
+    out << h << ", ";
+  out << "\n";
+  return out;
+}
+
+class Game {
+  Dice roll;
+  Statistics stats;
+
+  bool move(int& player, int& otherPlayer, int& rollCount) {
+    int r;
+    do {
+      r = roll();
+      rollCount++;
+      player = board[player + r];
+      stats.landing(player);
+      if (player == 100) return true;
+      if (player == otherPlayer) // House rule #1: landing on another player bumps them off
+        otherPlayer = 0;
+    } while (r == 6); // House rule #2: rolling 6 gives you another turn
+    return false;
+  }
+
+  void playOneGame() {
+    int red = 0;
+    int blue = 0;
+    int rollCount = 0;
+    while (true) {
+      if (move(red, blue, rollCount)) {
+        stats.firstPlayerWon();
+        break;
+      }
+
+      if (move(blue, red, rollCount))
+        break;
+    }
+
+    stats.gameMoves(rollCount);
+  }
+
+public:
+  operator const Statistics&() const { return stats; }
+
+  void runTrials(int nTrials) {
+    for (int trials = 0; trials < nTrials; trials++)
+      playOneGame();
+  }
+};
+
+int main() {
+  Statistics grandTotals;
+#pragma omp parallel
+  {
+    Game game;
+    game.runTrials(10000);
+#pragma omp critical
+    grandTotals += game;
+  }
+
+  std::cout << grandTotals << "\n";
+  return 0;
+}
+```
